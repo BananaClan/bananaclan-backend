@@ -1,3 +1,8 @@
+export enum ProductTag {
+  RECOMMENDED = 'RECOMMENDED',
+  TRENDING = 'TRENDING'
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -5,10 +10,13 @@ export interface Product {
     model_name: string;
     images: string[];
     seller_id: string;
+    seller_name: string;
+    seller_logo: string;
     color: string;
     size_quantity: Record<string, number>;
     price: number;
     color_variants: string[] | null;
+    tags: ProductTag[] | null;
   }
   
   export interface ProductResponse {
@@ -18,10 +26,13 @@ export interface Product {
     model_name: string;
     images: string[];
     seller_id: string;
+    seller_name: string;
+    seller_logo: string;
     color: string;
     size_quantity: Record<string, number>;
     price: number;
     color_variants: ProductVariant[] | null;
+    tags: ProductTag[] | null;
   }
   
   export interface ProductVariant {
