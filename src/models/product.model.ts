@@ -17,6 +17,9 @@ export interface Product {
     price: number;
     color_variants: string[] | null;
     tags: ProductTag[] | null;
+    created_at: string;
+    updated_at: string;
+    is_active: boolean;
   }
   
   export interface ProductResponse {
