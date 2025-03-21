@@ -20,6 +20,7 @@ export interface SimplifiedProduct {
   seller_logo: string;
   image: string;
   price: number;
+  created_at?: string;
 }
 
 export class ProductService {
@@ -93,6 +94,82 @@ export class ProductService {
       return null;
     }
   }
+
+  /**
+ * Get latest products sorted by creation date
+ */
+async getLatestProducts(page: number = 1, limit: number = 12): Promise<PaginatedResult<SimplifiedProduct>> {
+  try {
+    // Calculate offset
+    const offset = (page - 1) * limit;
+    
+    // Get total count of active products
+    const { count, error: countError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+      
+    if (countError) {
+      console.error('Error counting latest products:', countError);
+      throw countError;
+    }
+    
+    // Get paginated data with a join to sellers table
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        brand,
+        price,
+        images,
+        seller_id,
+        created_at,
+        sellers(store_name, logo_url)
+      `)
+      .eq('is_active', true)
+      .range(offset, offset + limit - 1)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching latest products:', error);
+      throw error;
+    }
+    
+    // Transform the data to the simplified format
+    const simplifiedData = data?.map(item => {
+      // Handle sellers being returned as an array and use Seller model for type safety
+      const sellerData: Partial<Seller> = Array.isArray(item.sellers) ? item.sellers[0] : item.sellers;
+      
+      return {
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        seller_id: item.seller_id,
+        seller_name: sellerData?.store_name || 'Unknown Seller',
+        seller_logo: sellerData?.logo_url || '',
+        image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : '',
+        price: item.price,
+        created_at: item.created_at
+      };
+    }) || [];
+    
+    // Return paginated result
+    const totalCount = count || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    return {
+      data: simplifiedData,
+      total: totalCount,
+      page,
+      limit,
+      totalPages
+    };
+  } catch (error) {
+    console.error('Error in getLatestProducts service:', error);
+    throw error;
+  }
+}
 
   /**
    * Fetch products with a specific tag

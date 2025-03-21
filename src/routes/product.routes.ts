@@ -11,8 +11,13 @@ router.get('/recommended', (req, res, next) => {
   ProductController.getRecommendedProducts(req, res).catch(next);
 });
 
+router.get('/latest', (req, res, next) => {
+  ProductController.getLatestProducts(req, res).catch(next);
+});
+
 router.get('/:productId', (req, res, next) => {
   ProductController.getProductById(req, res).catch(next);
 });
+
 
 export default router;
