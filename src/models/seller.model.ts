@@ -16,4 +16,15 @@ export interface Seller {
     verified: boolean;
     created_at: string;
     updated_at: string;
+    preview_image: string | null;
   }
+
+  // DTO (Data Transfer Object) for simplified seller list
+export interface SellerListItem {
+  id: string;
+  store_name: string;
+  logo_url: string;
+  preview_image: string | null;
+  city: string;
+  state: string;
+}
