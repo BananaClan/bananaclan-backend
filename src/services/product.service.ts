@@ -21,6 +21,7 @@ export interface SimplifiedProduct {
   image: string;
   price: number;
   created_at?: string;
+  sales_till_date?: number; 
 }
 
 export class ProductService {
@@ -94,6 +95,90 @@ export class ProductService {
       return null;
     }
   }
+
+  /**
+ * Get top selling products by seller
+ */
+async getTopSellingProductsBySeller(
+  sellerId: string,
+  page: number = 1,
+  limit: number = 8
+): Promise<PaginatedResult<SimplifiedProduct>> {
+  try {
+    // Calculate offset
+    const offset = (page - 1) * limit;
+    
+    // Get total count of active products for this seller
+    const { count, error: countError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .eq('seller_id', sellerId);
+      
+    if (countError) {
+      console.error('Error counting seller products:', countError);
+      throw countError;
+    }
+    
+    // Get paginated data with a join to sellers table
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        brand,
+        price,
+        images,
+        seller_id,
+        sales_till_date,
+        created_at,
+        sellers(store_name, logo_url)
+      `)
+      .eq('is_active', true)
+      .eq('seller_id', sellerId)
+      .range(offset, offset + limit - 1)
+      .order('sales_till_date', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching top selling products by seller:', error);
+      throw error;
+    }
+    
+    // Transform the data to the simplified format
+    const simplifiedData = data?.map(item => {
+      // Handle sellers being returned as an array and use Seller model for type safety
+      const sellerData: Partial<Seller> = Array.isArray(item.sellers) ? item.sellers[0] : item.sellers;
+      
+      return {
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        seller_id: item.seller_id,
+        seller_name: sellerData?.store_name || 'Unknown Seller',
+        seller_logo: sellerData?.logo_url || '',
+        image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : '',
+        price: item.price,
+        sales_till_date: item.sales_till_date,
+        created_at: item.created_at
+      };
+    }) || [];
+    
+    // Return paginated result
+    const totalCount = count || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    return {
+      data: simplifiedData,
+      total: totalCount,
+      page,
+      limit,
+      totalPages
+    };
+  } catch (error) {
+    console.error('Error in getTopSellingProductsBySeller service:', error);
+    throw error;
+  }
+}
 
   /**
  * Get latest products sorted by creation date

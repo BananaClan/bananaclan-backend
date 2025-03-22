@@ -19,5 +19,10 @@ router.get('/:productId', (req, res, next) => {
   ProductController.getProductById(req, res).catch(next);
 });
 
+// Add this route to product.routes.ts
+router.get('/:sellerId/top-selling', (req, res, next) => {
+  ProductController.getTopSellingProductsBySeller(req, res).catch(next);
+});
+
 
 export default router;
