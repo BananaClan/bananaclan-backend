@@ -20,6 +20,7 @@ export interface Product {
     created_at: string;
     updated_at: string;
     is_active: boolean;
+    sales_till_date: number;
   }
   
   export interface ProductResponse {
